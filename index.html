@@ -74,18 +74,18 @@ document.addEventListener('touchmove', function(event) {
 });
 </script>
 
+<!-- imports -->
 <!-- three.js library -->
-<script src='lib/three.js/build/three.js'></script>
+<script src='three.js'></script>
 
 <!-- VRControls.js applies the WebVR transformations to a three.js camera object. -->
-<script src='lib/three.js/examples/js/controls/VRControls.js'></script>
+<script src='VRControls.js'></script>
 
 <!-- VREffect.js handles stereo camera setup and rendering.  -->
-<script src='lib/three.js/examples/js/effects/VREffect.js'></script>
-<!-- <script src='lib/three.js/examples/js/effects/VREffect-fromweb.js'></script> -->
+<script src='VREffect.js'></script>
 
 <!-- A polyfill for the WebVR API.  -->
-<script src='lib/webvr-polyfill.js'></script>
+<script src='webvr-polyfill.js'></script>
 
 
 <script>
@@ -150,9 +150,9 @@ function animate(timestamp) {
 // Kick off animation loop.
 requestAnimationFrame(animate);
 
-//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////
 //		Comments
-//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////
 
 function onResize() {
 	console.log('Resizing to %s x %s.', window.innerWidth, window.innerHeight);
@@ -253,8 +253,8 @@ function createImageMono(){
 	geometry.scale( - 1, 1, 1 );
 
 	var material = new THREE.MeshBasicMaterial( {
-		map: new THREE.TextureLoader().load( 'images/2294472375_24a3b8ef46_o.jpg' )
-		// map: new THREE.TextureLoader().load( 'images/IMG_0405.JPG' )
+		map: new THREE.TextureLoader().load( '2294472375_24a3b8ef46_o.jpg' )
+		// map: new THREE.TextureLoader().load( 'IMG_0405.JPG' )
 	} );
 	material.map.minFilter = THREE.LinearFilter;
 	material.map.format = THREE.RGBFormat;
@@ -272,7 +272,7 @@ function createVideoMono(){
 	video.height = 360;
 	video.autoplay = true;
 	video.loop = true;
-	video.src = "videos/pyc_360_480p.mp4";
+	video.src = "pyc_360_480p.mp4";
 	var texture = new THREE.VideoTexture( video );
 	texture.minFilter = THREE.LinearFilter;
 	texture.format = THREE.RGBFormat;
@@ -293,7 +293,7 @@ function createVideoMono(){
 		document.body.removeEventListener('click', onClick)
 	})
 
-
 	return mesh;
 }
-</script></html>
+</script>
+</html>
