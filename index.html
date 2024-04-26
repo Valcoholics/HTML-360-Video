@@ -1,160 +1,299 @@
-<!doctype html>
-<html>
-  <head>
-    <title>WebVR Experiments</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-      html {
-        font-size: 14px;
-      }
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<title>Palomas & Cordajes</title>
+<meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0, shrink-to-fit=no'>
+<meta name='mobile-web-app-capable' content='yes'>
+<meta name='apple-mobile-web-app-capable' content='yes' />
+<meta name='apple-mobile-web-app-status-bar-style' content='black-translucent' />
+<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/font-awesome/4.6.2/css/font-awesome.min.css'>
+<style>
+html, body {
+	width: 100%;
+	height: 100%;
+	background-color: #000;
+	color: #fff;
+	margin: 0px;
+	padding: 0;
+	overflow: hidden;
+}
 
-      body {
-        background: rgb(94,45,239);
-        color: #fff;
-        font: normal 500 1.2rem/1.2 Inconsolata, Andale Mono, Courier New, monospace;
-        padding: 1rem 2rem;
-      }
+canvas {
+	position: absolute;
+	top: 0;
+}
+#fullScreenContainer {
+	width: 100%;
+	height: 100%;
+	position: relative;
+}
 
-      ul {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-      }
+#buttons {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	z-index: 1;
+	/*to prevent mouse selection of the button*/
+	user-select: none;
+	-webkit-user-select: none;
+}
+#buttons i {
+	color: #ccc;
+	font-size: 150%;
+	margin-bottom: 0.4em;
+	margin-right: 0.4em;
+}
+#buttons i:hover {
+	color: #fff;
+	text-shadow: 0px 0px 5px lightblue, 0px 0px 10px lightblue;
+	cursor: pointer;
+}
+</style>
+</head>
 
-      .header {
-        position: relative;
-      }
+<body>
 
-      .resources {
-        font-size: 0;  /* Collapse whitespace. */
-        text-transform: uppercase;
-      }
+	<div id='fullScreenContainer'>
+		<div id='buttons'>
+			<i class='fa fa-arrows-alt' id='fullscreenButton'></i>
+			<i class='fa fa-eye' id='vrButton'></i>
+			<i class='fa fa-star' id='resetButton' title='reset position'></i>
+		</div>
+	</div>
 
-      .resources li + li {
-        margin-top: 0.5rem;
-      }
+</body>
 
-      .resources a {
-        color: rgba(0,0,0,0.5);
-        display: inline-block;
-        font-size: 1.2rem;
-        margin: -0.25rem -0.5rem;
-        padding: 0.25rem 0.5rem;
-        text-decoration: none;
-        transition: all 0.075s ease-in-out;
-      }
+<script>
+WebVRConfig = {
+	BUFFER_SCALE: 0.5,
+};
 
-      .resources a:hover {
-        background-color: rgba(0,0,0,0.25);
-        color: #fff;
-      }
+document.addEventListener('touchmove', function(event) {
+	event.preventDefault();
+});
+</script>
 
-      h1, h2 {
-        line-height: 100%;
-      }
+<!-- three.js library -->
+<script src='lib/three.js/build/three.js'></script>
 
-      h1 {
-        font-size: 1.6rem;
-        font-weight: 100;
-        letter-spacing: 0.04rem;
-        margin-bottom: 1.25rem;
-        text-transform: uppercase;
-      }
+<!-- VRControls.js applies the WebVR transformations to a three.js camera object. -->
+<script src='lib/three.js/examples/js/controls/VRControls.js'></script>
 
-      h2 {
-        color: rgba(0,0,0,0.5);
-        font-size: 0.9rem;
-        font-weight: 300;
-        margin: 2rem 0 0.5rem;
-        padding: 0;
-        text-transform: uppercase;
-      }
+<!-- VREffect.js handles stereo camera setup and rendering.  -->
+<script src='lib/three.js/examples/js/effects/VREffect.js'></script>
+<!-- <script src='lib/three.js/examples/js/effects/VREffect-fromweb.js'></script> -->
 
-      hr {
-        background: none;
-        border: 0;
-        border-bottom: 1px dashed rgba(255,255,255,0.25);
-        margin: 2rem 0;
-      }
+<!-- A polyfill for the WebVR API.  -->
+<script src='lib/webvr-polyfill.js'></script>
 
-      .links li + li {
-        box-shadow: inset 0 0.15rem 0.1rem -0.15rem rgba(0,0,0,0.5);
-      }
 
-      .links a {
-        color: #fff;
-        display: block;
-        font-size: 1.5rem;
-        letter-spacing: 0.01em;
-        padding: 0.75rem 0;
-        text-decoration: none;
-        transition: opacity 0.075s ease-in-out;
-      }
+<script>
+var onRenderFcts = []
 
-      .links a:hover {
-        background-color: rgba(0,0,0,0.15);
-        box-shadow: inset 0 0 0 0.15rem rgba(0,0,0,0.15);
-      }
+// Setup three.js WebGL renderer. Note: Antialiasing is a big performance hit.
+// Only enable it if you actually need to.
+var renderer = new THREE.WebGLRenderer({antialias: false});
+renderer.setPixelRatio(Math.floor(window.devicePixelRatio));
 
-      .links a:active {
-        background-color: rgba(0,0,0,0.25);
-        opacity: 0.75;
-      }
+// Append the canvas element created by the renderer to fullScreenContainer
+document.querySelector('#fullScreenContainer').appendChild(renderer.domElement);
 
-      .links li:hover,
-      .links li:hover + li {
-        margin: 0 -0.75rem;
-      }
+// Create a three.js scene.
+var scene = new THREE.Scene();
 
-      .links li:hover a,
-      .links li:hover + li a {
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
-      }
+// Create a three.js camera.
+var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
 
-      @media only screen and (min-width: 1000px) {
-        h1 {
-          font-size: 3rem;
-        }
+// Apply VR headset positional data to camera.
+var controls = new THREE.VRControls(camera);
 
-        .resources {
-          font-size: 1.2;
-        }
+// Apply VR stereo rendering to renderer.
+var effect = new THREE.VREffect(renderer);
+effect.setSize(window.innerWidth, window.innerHeight);
 
-        .resources li {
-          display: inline-block;
-        }
+// Get the VRDisplay and save it for later.
+var vrDisplay = null;
+navigator.getVRDisplays().then(function(displays) {
+	if (displays.length > 0) {
+		vrDisplay = displays[0];
+	}
+	
+	if( vrDisplay !== null ){
+		if( vrDisplay.capabilities.canPresent !== true ){
+			document.querySelector('#vrButton').style.display = 'none'
+		}
+	}
+});
 
-        .resources li + li {
-          margin-left: 2.5rem;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <header class="header">
-      <h1>webvr-experiments Examples</h1>
-      <ul id="resources" class="resources">
-        <li><a href="http://github.com/jeromeetienne/webvr-experiments/">GitHub Repo</a></li>
-        <li><a href="http://github.com/jeromeetienne/webvr-experiments/issues">Open Issues</a></li>
-        <li><a href="http://github.com/jeromeetienne/webvr-experiments/issues/new">File an Issue</a></li>
-      </ul>
+// Request animation frame loop function
+var lastRender = 0;
+function animate(timestamp) {
+	var delta = Math.min(timestamp - lastRender, 500);
+	lastRender = timestamp;
+	
+	// Apply rotation to cube mesh
+	onRenderFcts.forEach(function(onRenderFct){
+		onRenderFct(delta)
+	})
+	
+	// Update VR headset position and apply to camera.
+	controls.update();
+	
+	// Render the scene.
+	effect.render(scene, camera);
+	
+	// Keep looping.
+	requestAnimationFrame(animate);
+}
 
-      Thanks to borismus and its great work on webvr-polyfill
-    </header>
+// Kick off animation loop.
+requestAnimationFrame(animate);
 
-    <hr>
+//////////////////////////////////////////////////////////////////////////////////
+//		Comments
+//////////////////////////////////////////////////////////////////////////////////
 
-    <h2 id="examples">Examples</h2>
+function onResize() {
+	console.log('Resizing to %s x %s.', window.innerWidth, window.innerHeight);
+	effect.setSize(window.innerWidth, window.innerHeight);
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
+}
 
-    <ul class="links">
-      <li><a href="game/game.html">Game</a></li>
-      <li><a href="viewer360.html">Viewer360</a></li>
-      <li><a href="webar/">WebAR</a></li>
-      <li><a href="seethru.html">seethru</a></li>
-      <li><a href="threex.reticle/examples/reticle.html">Reticle</a></li>
-      <li><a href="boilerplate.html">Boilerplate</a></li>
-    </ul>
-  </body>
-</html>
+// Resize the WebGL canvas when we resize and also when we change modes.
+window.addEventListener('resize', onResize);
+window.addEventListener('vrdisplaypresentchange', function onVRDisplayPresentChange() {
+	console.log('onVRDisplayPresentChange');
+	onResize();
+});
+
+// Button click handlers.
+document.querySelector('#fullscreenButton').addEventListener('click', function() {
+	var domElement = document.querySelector('#fullScreenContainer')
+	enterFullscreen(domElement);
+});
+document.querySelector('#vrButton').addEventListener('click', function() {
+	vrDisplay.requestPresent([{source: renderer.domElement}]);
+});
+document.querySelector('#resetButton').addEventListener('click', function() {
+	vrDisplay.resetPose();
+});
+
+renderer.domElement.addEventListener('click', function(event){
+	var element = renderer.domElement
+	// check it is the proper click
+	if( event.target !== element )	return
+	if( vrDisplay.displayName !== "Mouse and Keyboard VRDisplay (webvr-polyfill)")	return
+	// Ask the browser to lock the pointer
+	element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
+	if ( /Firefox/i.test( navigator.userAgent ) ) {
+		var fullscreenchange = function ( event ) {
+			if ( document.fullscreenElement === element || document.mozFullscreenElement === element || document.mozFullScreenElement === element ) {
+				document.removeEventListener( 'fullscreenchange', fullscreenchange );
+				document.removeEventListener( 'mozfullscreenchange', fullscreenchange );
+				element.requestPointerLock();
+			}
+		};
+		document.addEventListener( 'fullscreenchange', fullscreenchange, false );
+		document.addEventListener( 'mozfullscreenchange', fullscreenchange, false );
+		element.requestFullscreen = element.requestFullscreen || element.mozRequestFullscreen || element.mozRequestFullScreen || element.webkitRequestFullscreen;
+		element.requestFullscreen();
+	} else {
+		element.requestPointerLock();
+	}
+})
+
+function enterFullscreen (element) {
+	if (element.requestFullscreen) {
+		element.requestFullscreen();
+	} else if (element.mozRequestFullScreen) {
+		element.mozRequestFullScreen();
+	} else if (element.webkitRequestFullscreen) {
+		element.webkitRequestFullscreen();
+	} else if (element.msRequestFullscreen) {
+		element.msRequestFullscreen();
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//		Code Separator
+//////////////////////////////////////////////////////////////////////////////
+
+if( location.hash === '#imageMono' )	switchSource('imageMono')
+if( location.hash === '#videoMono' )	switchSource('videoMono')
+if( location.hash === '' )		switchSource('videoMono')
+
+var container = null
+
+function switchSource(sourceType){
+	if( container )	container.parent.remove(container)
+	
+	location.hash = '#'+sourceType
+	
+	if( sourceType === 'imageMono'){
+		container = createImageMono()
+		scene.add(container)
+	}else if( sourceType === 'videoMono'){
+		container = createVideoMono()
+		scene.add(container)
+	}else{
+		console.assert(false)
+	}
+}
+
+document.addEventListener('sourceChange', function onSourceChange(event){
+	console.log('sourceChange', event)
+})
+
+function createImageMono(){	
+	document.dispatchEvent(new CustomEvent('sourceChange', { detail : {sourceType: 'imageMono'}}));
+
+	var geometry = new THREE.SphereGeometry( 500, 60, 40 );
+	geometry.scale( - 1, 1, 1 );
+
+	var material = new THREE.MeshBasicMaterial( {
+		map: new THREE.TextureLoader().load( 'images/2294472375_24a3b8ef46_o.jpg' )
+		// map: new THREE.TextureLoader().load( 'images/IMG_0405.JPG' )
+	} );
+	material.map.minFilter = THREE.LinearFilter;
+	material.map.format = THREE.RGBFormat;
+
+	var mesh = new THREE.Mesh( geometry, material );
+	return mesh;
+}
+
+function createVideoMono(){
+	var geometry = new THREE.SphereBufferGeometry( 500, 60, 40 );
+	geometry.scale( - 1, 1, 1 );
+
+	var video = document.createElement( 'video' );
+	video.width = 640;
+	video.height = 360;
+	video.autoplay = true;
+	video.loop = true;
+	video.src = "videos/pyc_360_480p.mp4";
+	var texture = new THREE.VideoTexture( video );
+	texture.minFilter = THREE.LinearFilter;
+	texture.format = THREE.RGBFormat;
+	var material   = new THREE.MeshBasicMaterial( { map : texture } );
+	mesh = new THREE.Mesh( geometry, material );
+
+	document.dispatchEvent(new CustomEvent('sourceChange', { detail : {sourceType: 'videoMono'}}));
+
+	function onClick(){
+		video.play()
+		document.body.removeEventListener('click', onClick)
+	}
+	document.body.addEventListener('click', onClick)
+
+	document.addEventListener('sourceChange', function onSourceChange(event){
+		video.pause()
+		document.removeEventListener('sourceChange', onSourceChange)
+		document.body.removeEventListener('click', onClick)
+	})
+
+
+	return mesh;
+}
+</script></html>
